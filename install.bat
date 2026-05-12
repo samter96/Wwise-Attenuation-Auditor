@@ -38,8 +38,8 @@ echo Creating virtual environment...
 if errorlevel 1 ( echo [ERROR] venv creation failed & pause & exit /b 1 )
 
 echo Installing waapi-client...
-.venv\Scripts\pip install --upgrade pip --quiet
-.venv\Scripts\pip install waapi-client --quiet
+.venv\Scripts\python.exe -m pip install --upgrade pip --quiet
+.venv\Scripts\python.exe -m pip install waapi-client --quiet
 if errorlevel 1 ( echo [ERROR] waapi-client install failed & pause & exit /b 1 )
 
 echo.

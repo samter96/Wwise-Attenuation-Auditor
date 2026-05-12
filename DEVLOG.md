@@ -35,6 +35,15 @@
 - `README.md`: 4 항목 (LRR / Spat / AttEn / AttSet) 의 16 경우의 수 매트릭스 추가
   + 핵심 2×2 매트릭스 추가. "기여 / 문의" / 라이선스 placeholder 정리
 
+### Hotfix — `install.bat` pip 업그레이드 호출 방식
+
+pip 26.x 부터 Windows 에서 `pip.exe install --upgrade pip` 직접 호출이 거부됨
+(자기 자신 덮어쓰기 불가). `python.exe -m pip` 형태로 변경.
+
+- `.venv\Scripts\pip install --upgrade pip --quiet`
+  → `.venv\Scripts\python.exe -m pip install --upgrade pip --quiet`
+- waapi-client 설치 호출도 동일 형태로 통일
+
 ---
 
 ## V.1.3.0 — 2026-05-06
