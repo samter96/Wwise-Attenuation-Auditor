@@ -12,9 +12,11 @@ except ImportError:
 
 from auditor_constants import (
     VERSION, WAAPI_URL, SCRIPT_DIR, EXCEPTIONS_FILE,
-    BG, BG2, BG3, PANEL, BORDER, BORDER2, ACCENT, OK_CLR, WARN, ERR_CLR,
-    FG, FG_DIM, FG_MUT, SEL_BG, EXC_CLR,
+    BG, BG2, BG3, PANEL, FIELD, BORDER, BORDER2, ACCENT, OK_CLR, WARN, ERR_CLR,
+    FG, FG_DIM, FG_MUT, SEL_BG, SEL_FG, EXC_CLR,
+    TINT_ERR_E, TINT_ERR_O, TINT_WARN_E, TINT_WARN_O, TINT_EXC_E, TINT_EXC_O,
     FONT_H1, FONT_H2, FONT_UI, FONT_UIB, FONT_SM, FONT_CODE,
+    init_fonts, ui_font,
     _BP, FIND_CMD_PRIMARY, CONTAINER_TYPES, SCOPE_TREE_TYPES,
     _DUMMY_SUFFIX, _ICON_MAP, _ICON_FALLBACK,
 )
@@ -25,6 +27,7 @@ from auditor_ui_helpers import _ab
 class AttenuationAuditor:
     def __init__(self, root):
         self.root = root
+        init_fonts(self.root)   # 설치된 폰트 확정 — 위젯 생성 전에 반드시 먼저
         self.root.title("Attenuation Auditor  —  Wwise")
         sh    = self.root.winfo_screenheight()
         win_h = int(sh * 0.80)
@@ -112,19 +115,30 @@ class AttenuationAuditor:
             except: pass
 
     def _apply_styles(self):
+        # clam 은 기본으로 입체 베벨을 그린다. lightcolor/darkcolor 를 배경과
+        # 같은 값으로 눌러 SoundField 의 플랫한 면을 재현한다.
         s = ttk.Style(); s.theme_use("clam")
-        s.configure("Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=26, font=FONT_CODE, borderwidth=0, relief="flat")
-        s.configure("Treeview.Heading", background=BG3, foreground=FG_DIM, font=FONT_UIB, relief="flat", padding=[8, 6])
-        s.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", "#FFFFFF")])
-        s.map("Treeview.Heading", background=[("active", PANEL)])
-        s.configure("Scope.Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=22, font=FONT_UI, borderwidth=0, relief="flat")
-        s.map("Scope.Treeview", background=[("selected", SEL_BG)], foreground=[("selected", "#FFFFFF")])
-        s.configure("TNotebook", background=BG3, borderwidth=0, tabmargins=[0, 0, 0, 0])
-        s.configure("TNotebook.Tab", background=BG3, foreground=FG_DIM, padding=[14, 7], font=FONT_UIB, borderwidth=0)
-        s.map("TNotebook.Tab", background=[("selected", BG2), ("active", PANEL)], foreground=[("selected", FG), ("active", FG)])
+        s.configure("Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=26, font=FONT_CODE, borderwidth=0, relief="flat",
+                    bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
+        s.configure("Treeview.Heading", background=BG3, foreground=FG_DIM, font=FONT_UIB, relief="flat", padding=[8, 6],
+                    bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
+        s.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", SEL_FG)])
+        s.map("Treeview.Heading", background=[("active", PANEL)], foreground=[("active", FG)])
+        s.configure("Scope.Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=22, font=FONT_UI, borderwidth=0, relief="flat",
+                    bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
+        s.map("Scope.Treeview", background=[("selected", SEL_BG)], foreground=[("selected", SEL_FG)])
+        s.configure("TNotebook", background=BG3, borderwidth=0, tabmargins=[0, 0, 0, 0],
+                    bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
+        s.configure("TNotebook.Tab", background=BG3, foreground=FG_DIM, padding=[14, 7], font=FONT_UIB, borderwidth=0,
+                    bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
+        s.map("TNotebook.Tab", background=[("selected", BG2), ("active", PANEL)], foreground=[("selected", FG), ("active", FG)],
+              lightcolor=[("selected", BG2)], darkcolor=[("selected", BG2)])
         for orient in ("Vertical", "Horizontal"):
-            s.configure(f"{orient}.TScrollbar", background=PANEL, troughcolor=BG2, arrowcolor=FG_DIM, borderwidth=0, relief="flat", width=8)
-            s.map(f"{orient}.TScrollbar", background=[("active", BORDER2)])
+            s.configure(f"{orient}.TScrollbar", background=PANEL, troughcolor=FIELD, arrowcolor=FG_DIM, borderwidth=0, relief="flat", width=8,
+                        bordercolor=FIELD, lightcolor=PANEL, darkcolor=PANEL)
+            s.map(f"{orient}.TScrollbar", background=[("active", BORDER2)],
+                  lightcolor=[("active", BORDER2)], darkcolor=[("active", BORDER2)],
+                  arrowcolor=[("active", FG)])
 
     def _load_type_icons(self):
         candidates = _glob.glob(r"C:\Audiokinetic\*\Authoring\Data\Themes\classic\images\ObjectIcons")
@@ -142,7 +156,7 @@ class AttenuationAuditor:
     def _build_ui(self):
         hdr = tk.Frame(self.root, bg=BG3, height=52); hdr.pack(fill="x"); hdr.pack_propagate(False)
         id_f = tk.Frame(hdr, bg=BG3); id_f.pack(side="left", padx=(16, 0))
-        tk.Label(id_f, text="◉", bg=BG3, fg=ACCENT, font=(FONT_UI, 16)).pack(side="left", padx=(0, 8))
+        tk.Label(id_f, text="◉", bg=BG3, fg=ACCENT, font=ui_font(16)).pack(side="left", padx=(0, 8))
         tk.Label(id_f, text="Attenuation Auditor", bg=BG3, fg=FG, font=FONT_H1).pack(side="left")
         tk.Label(id_f, text=f"  {VERSION}", bg=BG3, fg=FG_MUT, font=FONT_SM).pack(side="left", pady=(3, 0))
         
@@ -155,7 +169,7 @@ class AttenuationAuditor:
         self._btn_help.pack(side="right", pady=10)
 
         status_area = tk.Frame(hdr, bg=BG3); status_area.pack(side="left", fill="x", expand=True, padx=20)
-        self._status_dot = tk.Label(status_area, text="●", bg=BG3, fg=FG_MUT, font=(FONT_UI, 10)); self._status_dot.pack(side="left", padx=(0, 6))
+        self._status_dot = tk.Label(status_area, text="●", bg=BG3, fg=FG_MUT, font=ui_font(10)); self._status_dot.pack(side="left", padx=(0, 6))
         self._proj_lbl = tk.Label(status_area, text="", bg=BG3, fg=ACCENT, font=FONT_UIB); self._proj_lbl.pack(side="left")
         self._proj_sep = tk.Label(status_area, text="", bg=BG3, fg=FG_MUT, font=FONT_UI); self._proj_sep.pack(side="left", padx=(4, 4))
         self._status_lbl = tk.Label(status_area, text="초기화 중...", bg=BG3, fg=FG_DIM, font=FONT_UI, anchor="w"); self._status_lbl.pack(side="left", fill="x")
@@ -183,7 +197,7 @@ class AttenuationAuditor:
         tk.Frame(left, bg=ACCENT, height=2).pack(fill="x")
         scope_hdr_f = tk.Frame(left, bg=BG3); scope_hdr_f.pack(fill="x")
         self._lbl_scope_hdr = tk.Label(scope_hdr_f, text=self._t("scope_hdr"), bg=BG3, fg=FG_DIM, font=FONT_UIB, padx=8, pady=6); self._lbl_scope_hdr.pack(side="left")
-        self._btn_scope_refresh = tk.Button(scope_hdr_f, text=self._t("scope_refresh"), command=lambda: threading.Thread(target=self._load_scope_tree, daemon=True).start(), bg=BG3, fg=FG_DIM, relief="flat", bd=0, font=(FONT_UI, 11), padx=6, pady=3, cursor="hand2", activebackground=PANEL, activeforeground=FG); self._btn_scope_refresh.pack(side="right", padx=(0, 4), pady=4)
+        self._btn_scope_refresh = tk.Button(scope_hdr_f, text=self._t("scope_refresh"), command=lambda: threading.Thread(target=self._load_scope_tree, daemon=True).start(), bg=BG3, fg=FG_DIM, relief="flat", bd=0, font=ui_font(11), padx=6, pady=3, cursor="hand2", activebackground=PANEL, activeforeground=FG); self._btn_scope_refresh.pack(side="right", padx=(0, 4), pady=4)
         self._lbl_scope_sel = tk.Label(scope_hdr_f, text=self._t("scope_all_lbl"), bg=BG3, fg=FG_MUT, font=FONT_SM, pady=6); self._lbl_scope_sel.pack(side="right", padx=(0, 2))
         self._lbl_scope_hint = tk.Label(left, text=self._t("scope_hint"), bg=BG2, fg=FG_MUT, font=FONT_SM, pady=2); self._lbl_scope_hint.pack(fill="x", padx=8)
         tk.Frame(left, bg=BORDER, height=1).pack(fill="x")
@@ -212,8 +226,8 @@ class AttenuationAuditor:
             self._tree.heading(cid, text=self._t(hkey), command=lambda c=cid: self._sort_by(c))
             self._tree.column(cid, width=width, stretch=tk.YES if stretch else tk.NO, anchor="w")
         self._tree.configure(displaycolumns=self._col_order)
-        self._tree.tag_configure("miss_e", background="#1A0A0A", foreground=ERR_CLR); self._tree.tag_configure("miss_o", background="#150808", foreground=ERR_CLR)
-        self._tree.tag_configure("extra_e", background="#1A1500", foreground=WARN); self._tree.tag_configure("extra_o", background="#151100", foreground=WARN)
+        self._tree.tag_configure("miss_e", background=TINT_ERR_E, foreground=ERR_CLR); self._tree.tag_configure("miss_o", background=TINT_ERR_O, foreground=ERR_CLR)
+        self._tree.tag_configure("extra_e", background=TINT_WARN_E, foreground=WARN); self._tree.tag_configure("extra_o", background=TINT_WARN_O, foreground=WARN)
         self._tree.tag_configure("ok_msg", background=BG2, foreground=OK_CLR); self._tree.tag_configure("hover", font=(*FONT_CODE[:2], "bold"))
         self._tree.bind("<Double-1>", self._on_double_click); self._tree.bind("<Motion>", self._on_hover); self._tree.bind("<Leave>", self._on_leave)
         self._tree.bind("<ButtonPress-1>", self._on_col_press); self._tree.bind("<B1-Motion>", self._on_col_motion)
@@ -229,7 +243,7 @@ class AttenuationAuditor:
         for cid, hkey, width, stretch in col_cfg:
             self._exc_tree.heading(cid, text=self._t(hkey)); self._exc_tree.column(cid, width=width, stretch=tk.YES if stretch else tk.NO, anchor="w")
         self._exc_tree.configure(displaycolumns=self._col_order)
-        self._exc_tree.tag_configure("exc_e", background="#16102A", foreground=EXC_CLR); self._exc_tree.tag_configure("exc_o", background="#120E22", foreground=EXC_CLR)
+        self._exc_tree.tag_configure("exc_e", background=TINT_EXC_E, foreground=EXC_CLR); self._exc_tree.tag_configure("exc_o", background=TINT_EXC_O, foreground=EXC_CLR)
         self._exc_tree.tag_configure("no_exc", background=BG2, foreground=FG_MUT); self._exc_tree.tag_configure("hover", font=(*FONT_CODE[:2], "bold"))
         self._exc_tree.bind("<Double-1>", self._on_exc_double_click); self._exc_tree.bind("<Motion>", self._on_exc_hover); self._exc_tree.bind("<Leave>", self._on_exc_leave)
         self._exc_tree.bind("<ButtonPress-1>", self._on_col_press); self._exc_tree.bind("<B1-Motion>", self._on_col_motion)
