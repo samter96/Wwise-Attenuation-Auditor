@@ -12,7 +12,8 @@ except ImportError:
 
 from auditor_constants import (
     VERSION, WAAPI_URL, SCRIPT_DIR, EXCEPTIONS_FILE,
-    BG, BG2, BG3, PANEL, FIELD, BORDER, BORDER2, ACCENT, OK_CLR, WARN, ERR_CLR,
+    BG, BG2, BG3, PANEL, FIELD, BORDER, BORDER2, ACCENT, ACCENT_CYAN,
+    ACCENT_VIOLET, OK_CLR, WARN, ERR_CLR,
     FG, FG_DIM, FG_MUT, SEL_BG, SEL_FG, EXC_CLR,
     TINT_ERR_E, TINT_ERR_O, TINT_WARN_E, TINT_WARN_O, TINT_EXC_E, TINT_EXC_O,
     FONT_H1, FONT_H2, FONT_UI, FONT_UIB, FONT_SM, FONT_CODE,
@@ -29,11 +30,20 @@ class AttenuationAuditor:
         self.root = root
         init_fonts(self.root)   # 설치된 폰트 확정 — 위젯 생성 전에 반드시 먼저
         self.root.title("Attenuation Auditor  —  Wwise")
-        sh    = self.root.winfo_screenheight()
-        win_h = int(sh * 0.80)
-        win_w = max(1160, int(win_h * 1.55))
-        self.root.geometry(f"{win_w}x{win_h}")
-        self.root.minsize(980, 620)
+        # 창 제목표시줄 / 작업표시줄 아이콘. default= 로 주면 messagebox 같은
+        # 자식 창에도 같이 적용된다. 아이콘이 없어도 실행에는 영향 없다.
+        try:
+            _ico = os.path.join(SCRIPT_DIR, "assets", "icon.ico")
+            if os.path.exists(_ico):
+                self.root.iconbitmap(default=_ico)
+        except Exception:
+            pass
+        sw, sh = self.root.winfo_screenwidth(), self.root.winfo_screenheight()
+        win_w = min(1180, max(860, sw - 80))
+        win_h = min(760, max(600, sh - 80))
+        pos_x, pos_y = max(0, (sw - win_w) // 2), max(0, (sh - win_h) // 2)
+        self.root.geometry(f"{win_w}x{win_h}+{pos_x}+{pos_y}")
+        self.root.minsize(860, 600)
         self.root.configure(bg=BG)
 
         self.client            = None
@@ -86,6 +96,13 @@ class AttenuationAuditor:
         self._btn_reconnect.config(text=self._t("reconnect"))
         self._btn_help.config(text=self._t("help_btn"))
         self._btn_scan.config(text=self._t("scan_btn"))
+        self._lbl_audit_setup.config(text=self._t("audit_setup"))
+        self._lbl_audit_desc.config(text=self._t("audit_desc"))
+        self._lbl_metric_checked.config(text=self._t("metric_checked"))
+        self._lbl_metric_violations.config(text=self._t("metric_violations"))
+        self._lbl_metric_exceptions.config(text=self._t("metric_exceptions"))
+        self._lbl_legend_miss.config(text=self._t("issue_miss"))
+        self._lbl_legend_extra.config(text=self._t("issue_extra"))
         self._btn_view.config(text=self._t("view_wwise"))
         self._btn_export.config(text=self._t("export_csv"))
         self._btn_add_exc.config(text=self._t("add_exception"))
@@ -115,26 +132,25 @@ class AttenuationAuditor:
             except: pass
 
     def _apply_styles(self):
-        # clam 은 기본으로 입체 베벨을 그린다. lightcolor/darkcolor 를 배경과
-        # 같은 값으로 눌러 SoundField 의 플랫한 면을 재현한다.
+        # clam의 입체 베벨을 표면색으로 눌러 얇은 hairline 중심의 계층을 만든다.
         s = ttk.Style(); s.theme_use("clam")
-        s.configure("Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=26, font=FONT_CODE, borderwidth=0, relief="flat",
+        s.configure("Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=29, font=FONT_UI, borderwidth=0, relief="flat",
                     bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
-        s.configure("Treeview.Heading", background=BG3, foreground=FG_DIM, font=FONT_UIB, relief="flat", padding=[8, 6],
+        s.configure("Treeview.Heading", background=BG3, foreground=FG_DIM, font=FONT_UIB, relief="flat", padding=[10, 8],
                     bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
         s.map("Treeview", background=[("selected", SEL_BG)], foreground=[("selected", SEL_FG)])
         s.map("Treeview.Heading", background=[("active", PANEL)], foreground=[("active", FG)])
-        s.configure("Scope.Treeview", background=BG2, foreground=FG, fieldbackground=BG2, rowheight=22, font=FONT_UI, borderwidth=0, relief="flat",
+        s.configure("Scope.Treeview", background=BG2, foreground=FG_DIM, fieldbackground=BG2, rowheight=25, font=FONT_UI, borderwidth=0, relief="flat",
                     bordercolor=BORDER, lightcolor=BG2, darkcolor=BG2)
         s.map("Scope.Treeview", background=[("selected", SEL_BG)], foreground=[("selected", SEL_FG)])
         s.configure("TNotebook", background=BG3, borderwidth=0, tabmargins=[0, 0, 0, 0],
                     bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
-        s.configure("TNotebook.Tab", background=BG3, foreground=FG_DIM, padding=[14, 7], font=FONT_UIB, borderwidth=0,
+        s.configure("TNotebook.Tab", background=BG3, foreground=FG_MUT, padding=[16, 9], font=FONT_UIB, borderwidth=0,
                     bordercolor=BORDER, lightcolor=BG3, darkcolor=BG3)
         s.map("TNotebook.Tab", background=[("selected", BG2), ("active", PANEL)], foreground=[("selected", FG), ("active", FG)],
               lightcolor=[("selected", BG2)], darkcolor=[("selected", BG2)])
         for orient in ("Vertical", "Horizontal"):
-            s.configure(f"{orient}.TScrollbar", background=PANEL, troughcolor=FIELD, arrowcolor=FG_DIM, borderwidth=0, relief="flat", width=8,
+            s.configure(f"{orient}.TScrollbar", background=PANEL, troughcolor=FIELD, arrowcolor=FG_MUT, borderwidth=0, relief="flat", width=9,
                         bordercolor=FIELD, lightcolor=PANEL, darkcolor=PANEL)
             s.map(f"{orient}.TScrollbar", background=[("active", BORDER2)],
                   lightcolor=[("active", BORDER2)], darkcolor=[("active", BORDER2)],
@@ -153,53 +169,109 @@ class AttenuationAuditor:
     def _type_icon(self, obj_type):
         return self._type_icons.get(obj_type)
 
+    @staticmethod
+    def _brand_mark(parent):
+        """Attenuation의 거리 곡선을 한 줄 심볼로 축약한 제품군 브랜드 마크."""
+        mark = tk.Canvas(parent, width=38, height=24, bg=BG3,
+                         highlightthickness=0, bd=0)
+        mark.create_oval(3, 10, 7, 14, fill=ACCENT_CYAN, outline="")
+        mark.create_arc(4, 6, 18, 18, start=-55, extent=110,
+                        style="arc", outline=ACCENT_CYAN, width=2)
+        mark.create_arc(6, 3, 27, 21, start=-50, extent=100,
+                        style="arc", outline=ACCENT, width=2)
+        mark.create_arc(9, 1, 36, 23, start=-47, extent=94,
+                        style="arc", outline=ACCENT_VIOLET, width=2)
+        return mark
+
+    @staticmethod
+    def _metric_card(parent, label, value, color):
+        shell = tk.Frame(parent, bg=BORDER)
+        card = tk.Frame(shell, bg=BG3)
+        card.pack(fill="both", expand=True, padx=1, pady=1)
+        lbl = tk.Label(card, text=label, bg=BG3, fg=FG_MUT,
+                       font=FONT_SM, anchor="w")
+        lbl.pack(fill="x", padx=12, pady=(7, 0))
+        val = tk.Label(card, text=value, bg=BG3, fg=color,
+                       font=ui_font(15, bold=True), anchor="w")
+        val.pack(fill="x", padx=12, pady=(0, 7))
+        return shell, lbl, val
+
     def _build_ui(self):
-        hdr = tk.Frame(self.root, bg=BG3, height=52); hdr.pack(fill="x"); hdr.pack_propagate(False)
-        id_f = tk.Frame(hdr, bg=BG3); id_f.pack(side="left", padx=(16, 0))
-        tk.Label(id_f, text="◉", bg=BG3, fg=ACCENT, font=ui_font(16)).pack(side="left", padx=(0, 8))
-        tk.Label(id_f, text="Attenuation Auditor", bg=BG3, fg=FG, font=FONT_H1).pack(side="left")
-        tk.Label(id_f, text=f"  {VERSION}", bg=BG3, fg=FG_MUT, font=FONT_SM).pack(side="left", pady=(3, 0))
+        hdr = tk.Frame(self.root, bg=BG3, height=48)
+        hdr.pack(fill="x"); hdr.pack_propagate(False)
+        id_f = tk.Frame(hdr, bg=BG3); id_f.pack(side="left", padx=(16, 0), fill="y")
+        self._brand_mark(id_f).pack(side="left", padx=(0, 9), pady=12)
+        tk.Label(id_f, text="Attenuation Auditor", bg=BG3, fg=FG,
+                 font=FONT_H1).pack(side="left")
+        tk.Label(id_f, text=VERSION, bg=PANEL, fg=FG_MUT, font=FONT_SM,
+                 padx=6, pady=2).pack(side="left", padx=(8, 0))
         
         btn_area = tk.Frame(hdr, bg=BG3); btn_area.pack(side="right", padx=(0, 12))
         self._lang_btn = _ab(btn_area, self._t("lang_toggle"), self._toggle_lang, preset="lang", padx=12)
-        self._lang_btn.pack(side="right", padx=(4, 0), pady=10)
+        self._lang_btn.pack(side="right", padx=(5, 0), pady=9)
         self._btn_reconnect = _ab(btn_area, self._t("reconnect"), lambda: threading.Thread(target=self._connect_waapi, daemon=True).start(), preset="ghost", font=FONT_UI, padx=12)
-        self._btn_reconnect.pack(side="right", padx=4, pady=10)
+        self._btn_reconnect.pack(side="right", padx=4, pady=9)
         self._btn_help = _ab(btn_area, self._t("help_btn"), self._show_help, preset="ghost", font=FONT_UI, padx=12)
-        self._btn_help.pack(side="right", pady=10)
+        self._btn_help.pack(side="right", pady=9)
 
-        status_area = tk.Frame(hdr, bg=BG3); status_area.pack(side="left", fill="x", expand=True, padx=20)
-        self._status_dot = tk.Label(status_area, text="●", bg=BG3, fg=FG_MUT, font=ui_font(10)); self._status_dot.pack(side="left", padx=(0, 6))
+        status_area = tk.Frame(hdr, bg=BG3); status_area.pack(side="left", fill="x", expand=True, padx=18)
+        self._status_dot = tk.Label(status_area, text="●", bg=BG3, fg=FG_MUT, font=ui_font(8)); self._status_dot.pack(side="left", padx=(0, 7))
         self._proj_lbl = tk.Label(status_area, text="", bg=BG3, fg=ACCENT, font=FONT_UIB); self._proj_lbl.pack(side="left")
         self._proj_sep = tk.Label(status_area, text="", bg=BG3, fg=FG_MUT, font=FONT_UI); self._proj_sep.pack(side="left", padx=(4, 4))
         self._status_lbl = tk.Label(status_area, text="초기화 중...", bg=BG3, fg=FG_DIM, font=FONT_UI, anchor="w"); self._status_lbl.pack(side="left", fill="x")
 
-        tk.Frame(self.root, bg=ACCENT, height=2).pack(fill="x")
+        accent_rail = tk.Frame(self.root, bg=BG, height=1)
+        accent_rail.pack(fill="x"); accent_rail.pack_propagate(False)
+        for color in (ACCENT_CYAN, ACCENT, ACCENT_VIOLET):
+            tk.Frame(accent_rail, bg=color).pack(side="left", fill="both", expand=True)
         content = tk.Frame(self.root, bg=BG); content.pack(fill="both", expand=True)
 
-        opt_outer = tk.Frame(content, bg=BORDER); opt_outer.pack(fill="x", padx=12, pady=(10, 0))
-        opt_panel = tk.Frame(opt_outer, bg=BG2); opt_panel.pack(fill="both", padx=1, pady=(0, 1))
-        tk.Frame(opt_panel, bg=ACCENT, height=2).pack(fill="x")
+        opt_outer = tk.Frame(content, bg=BORDER); opt_outer.pack(fill="x", padx=16, pady=(12, 0))
+        opt_panel = tk.Frame(opt_outer, bg=BG2); opt_panel.pack(fill="both", padx=1, pady=1)
         opt_body = tk.Frame(opt_panel, bg=BG2); opt_body.pack(fill="x", padx=14, pady=10)
         row = tk.Frame(opt_body, bg=BG2); row.pack(fill="x")
 
-        grp2 = tk.Frame(row, bg=BG2); grp2.pack(side="left", anchor="nw")
+        intro = tk.Frame(row, bg=BG2, width=300); intro.pack(side="left", fill="y", padx=(0, 22)); intro.pack_propagate(False)
+        self._lbl_audit_setup = tk.Label(intro, text=self._t("audit_setup"), bg=BG2,
+                                         fg=ACCENT_CYAN, font=FONT_UIB, anchor="w")
+        self._lbl_audit_setup.pack(fill="x")
+        self._lbl_audit_desc = tk.Label(intro, text=self._t("audit_desc"), bg=BG2,
+                                        fg=FG_DIM, font=FONT_SM, anchor="w",
+                                        justify="left", wraplength=292)
+        self._lbl_audit_desc.pack(fill="x", pady=(5, 0))
+
+        legend = tk.Frame(intro, bg=BG2); legend.pack(fill="x", pady=(6, 0))
+        tk.Label(legend, text="●", bg=BG2, fg=ERR_CLR, font=FONT_SM).pack(side="left", padx=(0, 4))
+        self._lbl_legend_miss = tk.Label(legend, text=self._t("issue_miss"), bg=BG2, fg=FG_DIM, font=FONT_SM)
+        self._lbl_legend_miss.pack(side="left")
+        tk.Label(legend, text="●", bg=BG2, fg=WARN, font=FONT_SM).pack(side="left", padx=(10, 4))
+        self._lbl_legend_extra = tk.Label(legend, text=self._t("issue_extra"), bg=BG2, fg=FG_DIM, font=FONT_SM)
+        self._lbl_legend_extra.pack(side="left")
+
+        grp2 = tk.Frame(row, bg=BG2); grp2.pack(side="left", anchor="nw", padx=(0, 20))
         self._lbl_obj_types = tk.Label(grp2, text=self._t("obj_types_hdr"), bg=BG2, fg=FG_DIM, font=FONT_SM); self._lbl_obj_types.pack(anchor="w", pady=(0, 4))
-        self._chk_sounds = tk.Checkbutton(grp2, text=self._t("opt_sounds"), variable=self._opt_sounds, bg=BG2, fg=FG, selectcolor=PANEL, activebackground=BG2, activeforeground=FG, font=FONT_UI, anchor="w", cursor="hand2"); self._chk_sounds.pack(anchor="w")
-        self._chk_containers = tk.Checkbutton(grp2, text=self._t("opt_containers"), variable=self._opt_containers, bg=BG2, fg=FG, selectcolor=PANEL, activebackground=BG2, activeforeground=FG, font=FONT_UI, anchor="w", cursor="hand2"); self._chk_containers.pack(anchor="w", pady=(3, 0))
+        self._chk_sounds = tk.Checkbutton(grp2, text=self._t("opt_sounds"), variable=self._opt_sounds, bg=BG2, fg=FG, selectcolor=PANEL, activebackground=BG2, activeforeground=FG, font=FONT_UI, anchor="w", cursor="hand2", takefocus=True, highlightthickness=0); self._chk_sounds.pack(anchor="w")
+        self._chk_containers = tk.Checkbutton(grp2, text=self._t("opt_containers"), variable=self._opt_containers, bg=BG2, fg=FG, selectcolor=PANEL, activebackground=BG2, activeforeground=FG, font=FONT_UI, anchor="w", cursor="hand2", takefocus=True, highlightthickness=0); self._chk_containers.pack(anchor="w", pady=(3, 0))
 
         self._btn_scan = _ab(row, self._t("scan_btn"), self._run_scan, preset="primary", font=FONT_UIB, padx=24); self._btn_scan.pack(side="right", anchor="center")
 
-        paned = tk.PanedWindow(content, orient="horizontal", bg=BORDER, sashwidth=5, sashrelief="flat", sashpad=0, bd=0)
-        paned.pack(fill="both", expand=True, padx=12, pady=(6, 0))
+        metrics = tk.Frame(content, bg=BG); metrics.pack(fill="x", padx=16, pady=(8, 0))
+        checked_shell, self._lbl_metric_checked, self._metric_checked = self._metric_card(metrics, self._t("metric_checked"), "—", FG_MUT)
+        checked_shell.pack(side="left", fill="x", expand=True, padx=(0, 4))
+        violations_shell, self._lbl_metric_violations, self._metric_violations = self._metric_card(metrics, self._t("metric_violations"), "—", FG_MUT)
+        violations_shell.pack(side="left", fill="x", expand=True, padx=4)
+        exceptions_shell, self._lbl_metric_exceptions, self._metric_exceptions = self._metric_card(metrics, self._t("metric_exceptions"), str(len(self._exceptions)), EXC_CLR)
+        exceptions_shell.pack(side="left", fill="x", expand=True, padx=(4, 0))
 
-        left = tk.Frame(paned, bg=BG2, width=220); paned.add(left, minsize=140)
-        tk.Frame(left, bg=ACCENT, height=2).pack(fill="x")
+        paned = tk.PanedWindow(content, orient="horizontal", bg=BG, sashwidth=8, sashrelief="flat", sashpad=0, bd=0)
+
+        left_shell = tk.Frame(paned, bg=BORDER, width=240); paned.add(left_shell, minsize=170)
+        left = tk.Frame(left_shell, bg=BG2); left.pack(fill="both", expand=True, padx=1, pady=1)
         scope_hdr_f = tk.Frame(left, bg=BG3); scope_hdr_f.pack(fill="x")
-        self._lbl_scope_hdr = tk.Label(scope_hdr_f, text=self._t("scope_hdr"), bg=BG3, fg=FG_DIM, font=FONT_UIB, padx=8, pady=6); self._lbl_scope_hdr.pack(side="left")
-        self._btn_scope_refresh = tk.Button(scope_hdr_f, text=self._t("scope_refresh"), command=lambda: threading.Thread(target=self._load_scope_tree, daemon=True).start(), bg=BG3, fg=FG_DIM, relief="flat", bd=0, font=ui_font(11), padx=6, pady=3, cursor="hand2", activebackground=PANEL, activeforeground=FG); self._btn_scope_refresh.pack(side="right", padx=(0, 4), pady=4)
-        self._lbl_scope_sel = tk.Label(scope_hdr_f, text=self._t("scope_all_lbl"), bg=BG3, fg=FG_MUT, font=FONT_SM, pady=6); self._lbl_scope_sel.pack(side="right", padx=(0, 2))
-        self._lbl_scope_hint = tk.Label(left, text=self._t("scope_hint"), bg=BG2, fg=FG_MUT, font=FONT_SM, pady=2); self._lbl_scope_hint.pack(fill="x", padx=8)
+        self._lbl_scope_hdr = tk.Label(scope_hdr_f, text=self._t("scope_hdr"), bg=BG3, fg=FG, font=FONT_UIB, padx=10, pady=8); self._lbl_scope_hdr.pack(side="left")
+        self._btn_scope_refresh = tk.Button(scope_hdr_f, text=self._t("scope_refresh"), command=lambda: threading.Thread(target=self._load_scope_tree, daemon=True).start(), bg=BG3, fg=FG_DIM, relief="flat", bd=0, font=ui_font(11), padx=7, pady=4, cursor="hand2", activebackground=PANEL, activeforeground=FG, takefocus=True); self._btn_scope_refresh.pack(side="right", padx=(0, 4), pady=4)
+        self._lbl_scope_sel = tk.Label(scope_hdr_f, text=self._t("scope_all_lbl"), bg=PANEL, fg=FG_DIM, font=FONT_SM, padx=6, pady=2); self._lbl_scope_sel.pack(side="right", padx=(0, 3))
+        self._lbl_scope_hint = tk.Label(left, text=self._t("scope_hint"), bg=BG2, fg=FG_MUT, font=FONT_SM, pady=5); self._lbl_scope_hint.pack(fill="x", padx=9)
         tk.Frame(left, bg=BORDER, height=1).pack(fill="x")
         scope_tree_f = tk.Frame(left, bg=BG2); scope_tree_f.pack(fill="both", expand=True)
         scope_vsb = ttk.Scrollbar(scope_tree_f, orient="vertical"); scope_vsb.pack(side="right", fill="y")
@@ -209,12 +281,13 @@ class AttenuationAuditor:
         self._scope_tree.bind("<<TreeviewOpen>>", self._on_scope_expand); self._scope_tree.bind("<<TreeviewSelect>>", self._on_scope_select)
         self._scope_placeholder = self._scope_tree.insert("", "end", text=f"  {self._t('scope_empty')}", tags=("dim",))
 
-        right = tk.Frame(paned, bg=BG); paned.add(right, minsize=400)
+        right_shell = tk.Frame(paned, bg=BORDER); paned.add(right_shell, minsize=520)
+        right = tk.Frame(right_shell, bg=BG2); right.pack(fill="both", expand=True, padx=1, pady=1)
         self._nb = ttk.Notebook(right); self._nb.pack(fill="both", expand=True)
 
         vio_frame = tk.Frame(self._nb, bg=BG2); self._nb.add(vio_frame, text=f"  {self._t('tab_violations')}  ")
         vio_hdr = tk.Frame(vio_frame, bg=BG3); vio_hdr.pack(fill="x")
-        self._lbl_count = tk.Label(vio_hdr, text="—", bg=BG3, fg=FG_DIM, font=FONT_UI, padx=12, pady=5); self._lbl_count.pack(side="right")
+        self._lbl_count = tk.Label(vio_hdr, text="—", bg=BG3, fg=FG_DIM, font=FONT_UIB, padx=12, pady=6); self._lbl_count.pack(side="right")
         tk.Frame(vio_frame, bg=BORDER, height=1).pack(fill="x")
         tree_f = tk.Frame(vio_frame, bg=BG2); tree_f.pack(fill="both", expand=True)
         cols = ("name", "type", "spat", "att", "issue", "wu", "path")
@@ -234,7 +307,7 @@ class AttenuationAuditor:
 
         exc_frame = tk.Frame(self._nb, bg=BG2); self._nb.add(exc_frame, text=f"  {self._t('tab_exceptions')}  ")
         exc_hdr = tk.Frame(exc_frame, bg=BG3); exc_hdr.pack(fill="x")
-        self._lbl_exc_count = tk.Label(exc_hdr, text="—", bg=BG3, fg=FG_DIM, font=FONT_UI, padx=12, pady=5); self._lbl_exc_count.pack(side="right")
+        self._lbl_exc_count = tk.Label(exc_hdr, text="—", bg=BG3, fg=FG_DIM, font=FONT_UIB, padx=12, pady=6); self._lbl_exc_count.pack(side="right")
         tk.Frame(exc_frame, bg=BORDER, height=1).pack(fill="x")
         exc_tree_f = tk.Frame(exc_frame, bg=BG2); exc_tree_f.pack(fill="both", expand=True)
         self._exc_tree = ttk.Treeview(exc_tree_f, columns=cols, show="headings", selectmode="extended")
@@ -248,14 +321,18 @@ class AttenuationAuditor:
         self._exc_tree.bind("<Double-1>", self._on_exc_double_click); self._exc_tree.bind("<Motion>", self._on_exc_hover); self._exc_tree.bind("<Leave>", self._on_exc_leave)
         self._exc_tree.bind("<ButtonPress-1>", self._on_col_press); self._exc_tree.bind("<B1-Motion>", self._on_col_motion)
 
-        act_bar = tk.Frame(content, bg=BG3); act_bar.pack(fill="x")
+        act_bar = tk.Frame(content, bg=BG)
         tk.Frame(act_bar, bg=BORDER, height=1).pack(fill="x", side="top")
-        inner = tk.Frame(act_bar, bg=BG3); inner.pack(fill="x", padx=12, pady=6)
+        inner = tk.Frame(act_bar, bg=BG); inner.pack(fill="x", pady=(7, 0))
         self._btn_view = _ab(inner, self._t("view_wwise"), self._view_in_wwise, preset="ghost", font=FONT_UI, padx=14); self._btn_view.pack(side="left", padx=(0, 6))
         self._btn_export = _ab(inner, self._t("export_csv"), self._export_csv, preset="ghost", font=FONT_UI, padx=14); self._btn_export.pack(side="left", padx=(0, 14))
-        tk.Frame(inner, bg=BORDER2, width=1).pack(side="left", fill="y", padx=(0, 14), pady=4)
-        self._btn_add_exc = _ab(inner, self._t("add_exception"), self._add_exception, preset="exc", font=FONT_UI, padx=14); self._btn_add_exc.pack(side="left", padx=(0, 6))
-        self._btn_rem_exc = _ab(inner, self._t("remove_exception"), self._remove_exception, preset="warn", font=FONT_UI, padx=14); self._btn_rem_exc.pack(side="left")
+        self._btn_rem_exc = _ab(inner, self._t("remove_exception"), self._remove_exception, preset="warn", font=FONT_UI, padx=14); self._btn_rem_exc.pack(side="right")
+        self._btn_add_exc = _ab(inner, self._t("add_exception"), self._add_exception, preset="exc", font=FONT_UI, padx=14); self._btn_add_exc.pack(side="right", padx=(0, 6))
+
+        # 하단 행동 영역을 먼저 예약해야 860×600에서도 결과 트리가 버튼을
+        # 화면 밖으로 밀어내지 않는다. pack 순서와 시각 순서는 side로 분리한다.
+        act_bar.pack(side="bottom", fill="x", padx=16, pady=(8, 10))
+        paned.pack(fill="both", expand=True, padx=16, pady=(8, 0))
 
     def _on_col_press(self, event):
         tree = event.widget
@@ -381,8 +458,19 @@ class AttenuationAuditor:
             if idx < len(self._exc_order): self._exceptions.pop(self._exc_order[idx], None)
         self._save_exceptions(); self._populate_exceptions()
 
+    def _update_metrics(self):
+        if not hasattr(self, "_metric_checked"):
+            return
+        checked = str(self._total_checked) if self._scanned else "—"
+        violations = str(len(self._results)) if self._scanned else "—"
+        violation_color = ERR_CLR if self._results else (OK_CLR if self._scanned else FG_MUT)
+        self._metric_checked.config(text=checked, fg=FG if self._scanned else FG_MUT)
+        self._metric_violations.config(text=violations, fg=violation_color)
+        self._metric_exceptions.config(text=str(len(self._exceptions)), fg=EXC_CLR)
+
     def _populate_exceptions(self):
         self._exc_tree.delete(*self._exc_tree.get_children()); self._exc_order = []
+        self._update_metrics()
         if not self._exceptions: self._exc_tree.insert("", "end", values=(f"—  {self._t('no_exceptions')}", "", "", "", "", "", ""), tags=("no_exc",)); self._lbl_exc_count.config(text="—", fg=FG_DIM); return
         exc_list = list(self._exceptions.items()); self._lbl_exc_count.config(text=self._t("exc_count").format(len(exc_list)), fg=EXC_CLR)
         for i, (obj_id, ex) in enumerate(exc_list):
@@ -506,7 +594,7 @@ class AttenuationAuditor:
                     if obj.get("type") not in audit_types or not self._matches_scope(obj.get("path", ""), scope_paths): continue
                     eff = self._resolve_effective(obj["path"], obj_map, eff_cache)
                     if eff is None: continue
-                    lr = eff.get("@ListenerRelativeRouting", False); spat = eff.get("@3DSpatialization", 0); is_3d = bool(lr) and spat != 0
+                    lr = eff.get("@ListenerRelativeRouting", False); spat = eff.get("@3DSpatialization", 0); is_3d = bool(lr) and spat in {1, 2}
                     att_ref = eff.get("@Attenuation") or {}; att_name = att_ref.get("name", "") if isinstance(att_ref, dict) else ""; att_enable = eff.get("@EnableAttenuation", False); att_active = bool(att_enable) and bool(att_name)
                     if is_3d and not att_active: issue = "miss"
                     elif not is_3d and att_active: issue = "extra"
@@ -533,6 +621,7 @@ class AttenuationAuditor:
 
     def _populate_results(self):
         self._tree.delete(*self._tree.get_children())
+        self._update_metrics()
         if not self._results:
             if self._scanned:
                 msg = self._t("no_violations").format(self._total_checked); self._tree.insert("", "end", values=(f"✓  {msg}", "", "", "", "", "", ""), tags=("ok_msg",)); self._lbl_count.config(text=msg, fg=OK_CLR)

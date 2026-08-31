@@ -1,45 +1,47 @@
 import os
 import tkinter.font as tkfont
 
-VERSION         = "V.1.4.0"
+VERSION         = "V.2.0.0"
 WAAPI_URL       = "ws://127.0.0.1:8080/waapi"
 SCRIPT_DIR      = os.path.dirname(os.path.abspath(__file__))
 EXCEPTIONS_FILE = os.path.join(SCRIPT_DIR, "att_auditor_exceptions.json")
 
 # ── Colors ────────────────────────────────────────────────────────────────────
-# SoundField 의 neutral(무채색) 테마를 그대로 이식. 아래 색은 SoundField
-# theme.py 의 COLORS_GREY 와 1:1 대응한다 (괄호 안이 원래 키 이름).
-BG        = "#1c1c1c"   # window            (bg)
-BG2       = "#1f1f1f"   # panel / list      (bg_panel)
-BG3       = "#262626"   # 올라온 면 / 헤더  (bg_elev)
-PANEL     = "#2a2a2a"   # 컨트롤 강조       (bg_control_hi)
-FIELD     = "#1a1a1a"   # 입력 필드         (bg_control)
-BORDER    = "#303030"   #                   (border)
-BORDER2   = "#3a3a3a"   #                   (border_strong)
-ACCENT    = "#888888"   # 강조 — 무채색 통일 (accent)
-ACCENT_HI = "#999999"   #                   (accent_hover)
-ACCENT_LO = "#777777"   #                   (accent_pressed)
-ON_ACCENT = "#1a1a1a"   # accent 채움 위의 글자색 (on_accent)
-FG        = "#c8c8c8"   #                   (text)
-# 아래 둘만 SoundField 값(#707070 / #4a4a4a)보다 밝게 올렸다. Tk 는 Qt 보다
-# 글자를 얇게 그려서 같은 hex 라도 더 흐리게 보이기 때문 — 체감 밝기를 맞춘 값.
-FG_DIM    = "#8a8a8a"   #                   (text_secondary 보정)
-FG_MUT    = "#6a6a6a"   #                   (text_muted 보정)
-HOVER     = "#232323"   #                   (hover / row_hover)
-ROW_ALT   = "#1a1a1a"   #                   (row_alt)
-SEL_BG    = "#303030"   # 선택 행 — 무채색이라 한 단계 밝게 (row_playing)
-SEL_FG    = "#e8e8e8"   # 선택 행 글자
+# Stereo Auditor 제품군 디자인 토큰. Tk는 alpha/blur/gradient를 직접 지원하지
+# 않으므로, 문서의 표면 합성 결과에 가까운 불투명 색으로 계층을 만든다.
+BG        = "#090b0f"   # app background
+BG2       = "#0d1015"   # surface / table
+BG3       = "#11151c"   # raised surface / header
+PANEL     = "#171c25"   # active control
+FIELD     = "#080a0e"   # recessed field
+BORDER    = "#1c212b"   # hairline (white 약 8%)
+BORDER2   = "#293140"   # strong/focus hairline
 
-# 상태색 — 검수 결과 구분이 색으로 남아야 하므로 채도만 낮춰 유지한다.
-OK_CLR  = "#6fb58a"   # 정상
-WARN    = "#d2a24e"   # 경고 / 초과
-ERR_CLR = "#c44848"   # 위반 / 누락
-EXC_CLR = "#9c7fc7"   # 예외 등록
+ACCENT_CYAN   = "#55d5ef"
+ACCENT        = "#6a86ff"
+ACCENT_VIOLET = "#a869ff"
+ACCENT_HI     = "#8299ff"
+ACCENT_LO     = "#526ddb"
+ON_ACCENT     = "#f7f9ff"
 
-# 상태 행 배경 틴트 (even/odd 지브라) — 무채색 배경에 얹는 아주 옅은 색조
-TINT_ERR_E,  TINT_ERR_O  = "#241a1a", "#1f1717"
-TINT_WARN_E, TINT_WARN_O = "#242018", "#1f1c16"
-TINT_EXC_E,  TINT_EXC_O  = "#221f28", "#1d1b22"
+FG        = "#edf1f8"
+FG_DIM    = "#a1aabc"
+FG_MUT    = "#778195"
+HOVER     = "#141922"
+ROW_ALT   = "#0b0e13"
+SEL_BG    = "#202b43"
+SEL_FG    = "#f5f7ff"
+
+# 상태색. miss/extra의 빨강/앰버 의미는 감사 판정 규칙이므로 유지한다.
+OK_CLR  = ACCENT_CYAN
+WARN    = "#eeb34f"
+ERR_CLR = "#f06468"
+EXC_CLR = ACCENT_VIOLET
+
+# 상태 행 배경 틴트 (even/odd). 라벨과 함께 사용하여 색상에만 의존하지 않는다.
+TINT_ERR_E,  TINT_ERR_O  = "#211318", "#1a1014"
+TINT_WARN_E, TINT_WARN_O = "#211b10", "#1a160e"
+TINT_EXC_E,  TINT_EXC_O  = "#1c1527", "#17121f"
 
 # ── Fonts ─────────────────────────────────────────────────────────────────────
 # SoundField 와 동일한 우선순위. Tkinter 는 QSS 처럼 자동 폴백이 없어서
@@ -68,8 +70,8 @@ UI_BOLD_FAMILY = "Segoe UI"    # 굵은 글씨 — init_fonts() 에서 확정
 UI_BOLD_WEIGHT = "bold"        # 굵은 글씨용 weight — init_fonts() 에서 확정
 MONO_FAMILY    = "Consolas"    # init_fonts() 에서 확정
 
-FONT_H1   = [UI_BOLD_FAMILY, 11, UI_BOLD_WEIGHT]
-FONT_H2   = [UI_BOLD_FAMILY, 10, UI_BOLD_WEIGHT]
+FONT_H1   = [UI_BOLD_FAMILY, 12, UI_BOLD_WEIGHT]
+FONT_H2   = [UI_BOLD_FAMILY, 11, UI_BOLD_WEIGHT]
 FONT_UI   = [UI_FAMILY,  9]
 FONT_UIB  = [UI_BOLD_FAMILY,  9, UI_BOLD_WEIGHT]
 FONT_SM   = [UI_FAMILY,  8]
@@ -152,13 +154,13 @@ def mono_font(size=9, bold=False):
 
 
 # ── Button presets ────────────────────────────────────────────────────────────
-# (bg, fg, hover, pressed) — SoundField QPushButton / QPushButton#primary 대응
+# (bg, fg, hover, pressed) — Stereo Auditor의 compact control 계층
 _BP = {
     "primary": (ACCENT,    ON_ACCENT, ACCENT_HI, ACCENT_LO),
-    "ghost":   (BG3,       FG,        PANEL,     FIELD),
-    "lang":    (BG2,       "#9a9a9a", BG3,       FIELD),
-    "warn":    ("#241d10", WARN,      "#2c2415", "#1c1710"),
-    "exc":     ("#221f28", EXC_CLR,   "#2a2632", "#1c1a22"),
+    "ghost":   (BG3,       FG_DIM,    PANEL,     FIELD),
+    "lang":    (PANEL,     FG_DIM,    BORDER2,   FIELD),
+    "warn":    ("#211b10", WARN,      "#2b2313", "#17120c"),
+    "exc":     ("#1c1527", EXC_CLR,   "#271b37", "#15101d"),
 }
 
 FIND_CMD_PRIMARY = ["FindInProjectExplorerSelectionChannel1",

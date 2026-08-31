@@ -1,5 +1,120 @@
 # Attenuation Auditor — DEVLOG
 
+## V.2.0.0 — 2026-08-27
+
+### Hotfix — 대형 Wwise 프로젝트 스캔 로딩 개선
+
+- V2 백엔드가 선택한 스코프와 무관하게 Wwise 전체 프로젝트의 대상 타입을 한 번에 조회하던 문제 수정
+- 스캔 쿼리를 Actor-Mixer Hierarchy 또는 선택된 scope의 descendants 기반으로 제한하고,
+  OverridePositioning 상속 판정에 필요한 조상 노드만 path 배치 조회로 보강
+- WAQL `where type = ...` 서버 필터링을 적용해 descendants 전체를 받은 뒤 Python에서 걸러내던 병목 제거
+- 실제 WAAPI 연결 프로젝트에서 전체 스캔 응답 시간 0.012초 확인
+- GitHub ZIP 다운로드에서도 최신 설치본을 받을 수 있도록 NSIS 설치 파일을 `releases/`에 포함하고 설치 문서/스크립트 경로 갱신
+- 기존 3D/Attenuation 판정 계약과 예외 fingerprint는 그대로 유지
+
+### 문서 — Wwise 애드온 툴 제품군 가이드 추가
+
+- Stereo Auditor 디자인 시스템과 Attenuation Auditor V2 실전 구현 경험을 합쳐
+  `docs/WWISE_ADDON_TOOL_DESIGN_SYSTEM.md` 작성
+- Wwise/WAAPI 툴용 정보 구조, Tauri/React 앱 셸, HiDPI 선명도, 커스텀 타이틀바,
+  ScopeTree/ResultsTable, Wwise command add-on, 출시 전 QA 체크리스트를 다음 툴 제작 기준으로 정리
+
+### Hotfix — Hero 타이틀 문구 정리
+
+- idle 상태의 메인 타이틀을 한/영 언어 설정과 무관하게 `Attenuation Auditor`로 통일
+
+### Hotfix — 125% 이상 DPI 선명도 및 네이티브 프레임 보정
+
+- Windows 실행 manifest에 `PerMonitorV2` DPI awareness를 명시하고, 프로세스 시작 시점에도
+  동일한 DPI context를 적용해 모니터 배율 변경 시 WebView가 운영체제의 비트맵 확대 대상이 되지 않도록 수정
+- WebView zoom을 100%로 고정하고 125% 모니터에서 1180×760 논리 창이 1475×950 물리 픽셀로
+  렌더링되는 것을 실제 릴리스 캡처로 검증
+- 작은 한국어 UI 글자는 Windows의 DPI 힌팅이 적용되는 `Malgun Gothic` 계열로 렌더링하고,
+  영문은 경량 Inter Variable Latin 폰트를 내장하도록 타이포그래피 체계 정리
+- borderless 창의 DWM shadow를 제거해 창 최상단에 나타나던 흰색 1px 선 제거
+- 문자 `✓`에 의존하던 체크 표시를 전용 `PrecisionCheck` SVG 컴포넌트로 교체하고
+  cyan gradient, inset highlight, focus/transition을 적용
+- 전체 한국어 웹폰트 번들을 제거해 프런트 CSS/폰트 자산 크기와 초기 렌더링 부담 축소
+
+### 전면 재구축 — Tauri / React 데스크톱 UI
+
+Tkinter의 렌더링·타이포그래피·애니메이션 한계를 벗어나기 위해 UI 계층을 Tauri 2 + React로
+교체했다. Stereo Auditor 디자인 시스템의 단순 색상뿐 아니라 표면 계층, 밀도, 서체,
+hairline, 상태 전환과 모션 문법까지 동일한 제품군 언어로 재구성했다.
+
+#### 비주얼 / UX
+
+- Inter Variable Latin 폰트를 내장하고 한국어는 Windows DPI 힌팅 폰트 스택을 사용
+- 커스텀 타이틀바, 프로젝트 연결 바, hero, 컨트롤 스트립, 3열 메트릭, 범위/결과 패널 구현
+- 스캔 상태에 반응하는 SVG Attenuation 궤도와 파형, glow, scan line 애니메이션 구현
+- 위반/예외 탭, 다중 범위·결과 선택, Wwise 이동, CSV, 예외 등록/해제, KO/EN, 도움말 제공
+- 1180×760 기본 창 및 860×600 최소 창, 축소 폭 responsive 레이아웃과 reduced-motion 대응
+- 위반 비율이 매우 낮을 때 점수가 100으로 오인되지 않도록 99점대는 소수 1자리로 표시
+
+#### 백엔드 / 패키징
+
+- `auditor_core.py`로 판정 계약을 UI에서 분리하고 `auditor_backend.py` JSON-lines sidecar 추가
+- Rust 프로세스 브리지가 persistent Python 백엔드를 관리하며 transport 장애에만 1회 재시작
+- PyInstaller 단일 백엔드 실행파일을 Tauri resource로 포함
+- 설치본의 예외 데이터와 백엔드 작업 폴더는 사용자별 Windows 앱 데이터 경로를 사용
+- 기존 프로젝트 폴더의 `att_auditor_exceptions.json`은 V2 최초 실행/설치 시 자동 마이그레이션
+- Windows x64 NSIS 설치 프로그램 및 소스용 `build_v2.bat` 생성
+- `launch.bat` / Wwise command add-on이 설치본과 로컬 릴리스 빌드를 우선 사용하도록 변경
+
+#### 판정 계약 보존
+
+- 3D 판정은 `ListenerRelativeRouting=on AND 3DSpatialization in {1, 2}`를 그대로 유지
+- `EnableAttenuation=on AND Attenuation.name 존재` 조건, null GUID 처리, 최근접 Override 상속 유지
+- `miss = 3D AND NOT ATT`, `extra = 2D AND ATT` 양방향 검사를 그대로 유지
+- WorkUnit / PhysicalFolder `filePath` 구분과 예외 fingerprint 자동 무효화 유지
+
+#### 검증
+
+- Python core/backend 자동 테스트 9개 통과
+- `npm run build`, `cargo check`, `npm run tauri -- build` 통과
+- PyInstaller 백엔드의 `ping` JSON 응답과 버전 `V.2.0.0` 확인
+- 릴리스 앱에서 포함된 `auditor_backend.exe` 자식 프로세스 기동 확인
+- 1180×760 브라우저 및 실제 Tauri 릴리스 창에서 idle/scanning/result 상태 시각 검수
+- 산출물: `src-tauri/target/release/attenuation-auditor.exe`
+  및 `src-tauri/target/release/bundle/nsis/Attenuation Auditor_2.0.0_x64-setup.exe`
+
+---
+
+## V.1.5.0 — 2026-08-26
+
+### UI — Stereo Auditor 제품군 디자인 시스템 적용
+
+`STEREO_AUDITOR_DESIGN_SYSTEM.md`의 시각 언어를 Tkinter 환경에 맞게 이식했다.
+판정 로직과 WAAPI 데이터 계약은 변경하지 않았다.
+
+#### 디자인 토큰
+
+- 배경/기본 표면/상승 표면을 `#090b0f` / `#0d1015` / `#11151c`로 분리
+- 브랜드 계층은 cyan → blue → violet, 검토 상태는 amber로 통일
+- `miss` 빨강 / `extra` 노랑 판정색과 라벨을 함께 유지
+- 주·보조·약한 텍스트 대비를 제품군 토큰에 맞게 상향
+- 버튼 hover/press/focus hairline과 키보드 focus 표시 추가
+
+#### 레이아웃과 컴포넌트
+
+- Attenuation 거리 곡선을 추상화한 3색 브랜드 마크와 1px 컬러 레일 추가
+- 감사 설정을 독립된 raised card로 구성하고 판정 범례를 행동 가까이에 배치
+- 검사 오브젝트 / 위반 / 예외의 3열 메트릭 스트립 추가
+- 범위 트리와 결과 탭을 hairline panel로 분리하고 표 행 높이·헤더·탭 대비 개선
+- 하단 액션을 좌측 일반 행동 / 우측 예외 행동으로 정리
+- 기본 창 1180×760, 중앙 배치, 최소 창 860×600으로 조정
+- 최소 창에서도 결과 트리가 하단 액션 바를 밀어내지 않도록 pack 순서 보정
+- 한국어/영어에 설정 설명, 메트릭, 범례 문자열 추가
+
+#### 검증
+
+- 4개 Python 모듈 `py_compile` 통과
+- 1180×760 실제 Tk 렌더 캡처로 시각 검수
+- 860×600에서 KO/EN 모두 스캔·내보내기·예외 버튼과 결과 트리 노출 확인
+- 핵심 판정식 `bool(lr) and spat in {1, 2}`, `att_active`, `miss/extra` 분기 무변경 확인
+
+---
+
 ## V.1.4.0 — 2026-05-12
 
 ### UX — 스캔 항목 토글 제거, 두 위반 항상 함께 검사

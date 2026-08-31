@@ -33,3 +33,18 @@ CLAUDE.md
 
 # Logs
 *.log
+
+# Tauri / frontend build output
+node_modules/
+dist/
+build/
+src-tauri/target/
+src-tauri/gen/
+src-tauri/resources/*.exe
+src-tauri/icons/android/
+src-tauri/icons/ios/
+src-tauri/icons/Square*.png
+src-tauri/icons/StoreLogo.png
+src-tauri/icons/64x64.png
+src-tauri/icons/icon.icns
+src-tauri/icons/icon.png

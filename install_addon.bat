@@ -2,7 +2,9 @@
 setlocal EnableDelayedExpansion
 cd /d "%~dp0"
 
-set "LAUNCH_PATH=%~dp0launch.bat"
+set "LAUNCH_PATH=%LOCALAPPDATA%\Attenuation Auditor\attenuation-auditor.exe"
+if not exist "%LAUNCH_PATH%" set "LAUNCH_PATH=%~dp0src-tauri\target\release\attenuation-auditor.exe"
+if not exist "%LAUNCH_PATH%" set "LAUNCH_PATH=%~dp0launch.bat"
 set "ADDON_DIR=%APPDATA%\Audiokinetic\Wwise\Add-ons\Commands"
 
 if not exist "%ADDON_DIR%" mkdir "%ADDON_DIR%"

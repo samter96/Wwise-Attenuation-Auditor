@@ -1,49 +1,24 @@
 @echo off
-setlocal EnableDelayedExpansion
+setlocal
 cd /d "%~dp0"
-echo [Attenuation Auditor] Installing...
 
-set PYTHON_EXE=
-
-for /f "delims=" %%P in ('where python 2^>nul') do (
-    if not defined PYTHON_EXE (
-        echo %%P | findstr /I "WindowsApps" >nul 2>&1
-        if errorlevel 1 set PYTHON_EXE=%%P
-    )
+set "SETUP_PATH=releases\Attenuation Auditor_2.0.0_x64-setup.exe"
+if not exist "%SETUP_PATH%" set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.0_x64-setup.exe"
+if not exist "%SETUP_PATH%" (
+    echo [Attenuation Auditor] No V2 installer found. Building it first...
+    call build_v2.bat
+    if errorlevel 1 exit /b 1
+    set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.0_x64-setup.exe"
 )
 
-if not defined PYTHON_EXE (
-    for /d %%D in ("%APPDATA%\uv\python\cpython-3.*-windows-x86_64-none") do (
-        if not defined PYTHON_EXE (
-            if exist "%%D\python.exe" set PYTHON_EXE=%%D\python.exe
-        )
-    )
+if exist "att_auditor_exceptions.json" (
+    if not exist "%APPDATA%\com.attenuationauditor.desktop" mkdir "%APPDATA%\com.attenuationauditor.desktop"
+    if not exist "%APPDATA%\com.attenuationauditor.desktop\att_auditor_exceptions.json" copy /Y "att_auditor_exceptions.json" "%APPDATA%\com.attenuationauditor.desktop\att_auditor_exceptions.json" >nul
 )
 
-if not defined PYTHON_EXE (
-    py --version >nul 2>&1 && set PYTHON_EXE=py
-)
-
-if not defined PYTHON_EXE (
-    echo [ERROR] Python not found.
-    echo Install Python 3.10+ from https://www.python.org
-    echo or install uv: https://docs.astral.sh/uv/
-    pause
-    exit /b 1
-)
-
-echo Python: !PYTHON_EXE!
-echo Creating virtual environment...
-"!PYTHON_EXE!" -m venv .venv
-if errorlevel 1 ( echo [ERROR] venv creation failed & pause & exit /b 1 )
-
-echo Installing waapi-client...
-.venv\Scripts\python.exe -m pip install --upgrade pip --quiet
-.venv\Scripts\python.exe -m pip install waapi-client --quiet
-if errorlevel 1 ( echo [ERROR] waapi-client install failed & pause & exit /b 1 )
-
+echo [Attenuation Auditor] Starting V2 installer...
+start "" /wait "%SETUP_PATH%"
 echo.
-echo [DONE] Installation complete.
-echo Next: run install_addon.bat to register in Wwise Tools menu.
-echo.
+echo [DONE] Installation step finished.
+echo Optional: run install_addon.bat to register the Wwise Tools menu command.
 pause
