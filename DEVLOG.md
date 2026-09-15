@@ -1,5 +1,16 @@
 # Attenuation Auditor — DEVLOG
 
+## V.2.0.1 — 2026-09-15
+
+### Branding — YSG Audio Labs 상단 브랜드 행 추가
+
+- Stereo Auditor/SoundField 계열과 같은 2단 커스텀 헤더 구조로 분리
+- 최상단 브랜드 행에 `YSG AUDIO LABS` 락업을 추가하고, 기존 제품명/버전/도움말/재연결/언어 토글은 제품 행으로 정리
+- 브랜드 행 텍스트를 제품 행과 동일한 폰트/웨이트/자간으로 맞추고 좌측 로고 기준선을 통일
+- YSG 브랜드 폴더의 `어테뉴에이션오디터.png`를 제품 행 로고로 내장
+- 브랜드 자산을 `src/brand.ts`에서 관리하도록 분리해 이후 Nexongames Sound Center 빌드와 교체 가능한 구조 마련
+- Vite 프론트 빌드 및 로컬 프리뷰에서 브랜드 행 렌더링 확인
+
 ## V.2.0.0 — 2026-08-27
 
 ### Hotfix — 대형 Wwise 프로젝트 스캔 로딩 개선

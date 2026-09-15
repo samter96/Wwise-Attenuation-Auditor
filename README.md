@@ -1,6 +1,6 @@
 # Attenuation Auditor — Wwise
 
-![version](https://img.shields.io/badge/version-V.2.0.0-blue) ![desktop](https://img.shields.io/badge/desktop-Tauri%202-purple) ![wwise](https://img.shields.io/badge/Wwise-WAAPI-orange)
+![version](https://img.shields.io/badge/version-V.2.0.1-blue) ![desktop](https://img.shields.io/badge/desktop-Tauri%202-purple) ![wwise](https://img.shields.io/badge/Wwise-WAAPI-orange)
 
 Wwise 프로젝트의 **Actor-Mixer Hierarchy** 를 WAAPI 로 스캔하여,
 **3D 사운드인데 Attenuation 이 없는 경우** 와 **2D 사운드인데 Attenuation 이 연결된 경우** 를
@@ -64,7 +64,7 @@ Wwise 프로젝트의 **Actor-Mixer Hierarchy** 를 WAAPI 로 스캔하여,
 
 ## 설치
 
-1. `releases\Attenuation Auditor_2.0.0_x64-setup.exe` 실행
+1. `releases\Attenuation Auditor_2.0.1_x64-setup.exe` 실행
 2. Wwise에서 `User Preferences → Enable Wwise Authoring API` 활성화
 3. 선택 사항: `install_addon.bat`을 실행해 Wwise Tools 메뉴에 등록
 
