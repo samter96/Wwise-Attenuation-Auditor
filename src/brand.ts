@@ -14,6 +14,6 @@ export const productBrand = {
 
 export const hubLink = {
   label: "HUB",
-  url: "https://samter96.github.io/YSGAudioTools/index.html",
+  url: "https://samter96.github.io/YSGAudioLabs/index.html",
   logoUrl: ysgColorMarkUrl,
 };
