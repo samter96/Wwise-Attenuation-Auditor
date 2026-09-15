@@ -1,6 +1,6 @@
 [package]
 name = "attenuation-auditor"
-version = "2.0.2"
+version = "2.0.3"
 description = "Wwise positioning and attenuation integrity auditor"
 authors = ["Attenuation Auditor"]
 edition = "2021"

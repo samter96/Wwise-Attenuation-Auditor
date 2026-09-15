@@ -1,5 +1,17 @@
 # Attenuation Auditor — DEVLOG
 
+## V.2.0.3 - 2026-09-15
+
+### Branding - HUB 버튼 문구를 YSG Audio Labs 로 교체
+
+- HUB 배지의 title / aria-label 을 `YSG Audio Tools 허브 열기` 에서
+  `YSG Audio Labs 허브 열기` (EN: `Open the YSG Audio Labs hub`) 로 변경.
+  2026-09-15 확정된 브랜드 리뉴얼 정책에 따라 **표기만** 바꾸고
+  저장소 이름·GitHub Pages 경로·`hubLink.url` 의 `YSGAudioTools` 식별자는 그대로 둔다
+- 버전 2.0.3 으로 상향 및 NSIS 설치본 재빌드
+- 허브 페이지(`samter96/YSGAudioTools`) 사양표도 같은 날 갱신:
+  version `v1.4.0` -> `v2.0.2`, runtime `Python/Tkinter` -> `Tauri 2 · WAAPI 백엔드 내장`
+
 ## V.2.0.2 — 2026-09-15
 
 ### Branding — 타이틀바 폰트 통일 · HUB 배지 · 앱 아이콘 교체

@@ -30,4 +30,4 @@ call npm run tauri -- build
 if errorlevel 1 exit /b 1
 
 echo.
-echo [DONE] src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.2_x64-setup.exe
+echo [DONE] src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.3_x64-setup.exe

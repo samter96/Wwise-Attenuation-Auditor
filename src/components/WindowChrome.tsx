@@ -42,8 +42,8 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
             className="hub-badge"
             onClick={openHub}
             onDoubleClick={(event) => event.stopPropagation()}
-            title={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
-            aria-label={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
+            title={language === "ko" ? "YSG Audio Labs 허브 열기" : "Open the YSG Audio Labs hub"}
+            aria-label={language === "ko" ? "YSG Audio Labs 허브 열기" : "Open the YSG Audio Labs hub"}
           >
             <img src={hubLink.logoUrl} alt="" draggable={false} />
             <span>{hubLink.label}</span>
@@ -61,7 +61,7 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
             <img src={productBrand.logoUrl} alt="" draggable={false} />
           </span>
           <span data-tauri-drag-region>{productBrand.name}</span>
-          <span className="build-tag" data-tauri-drag-region>V.2.0.2</span>
+          <span className="build-tag" data-tauri-drag-region>V.2.0.3</span>
         </div>
         <div className="chrome-actions">
           <button className="icon-text-button" onClick={onHelp}><HelpCircle size={13} />{language === "ko" ? "도움말" : "Help"}</button>
