@@ -2,13 +2,13 @@
 setlocal
 cd /d "%~dp0"
 
-set "SETUP_PATH=releases\Attenuation Auditor_2.0.1_x64-setup.exe"
-if not exist "%SETUP_PATH%" set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.1_x64-setup.exe"
+set "SETUP_PATH=releases\Attenuation Auditor_2.0.2_x64-setup.exe"
+if not exist "%SETUP_PATH%" set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.2_x64-setup.exe"
 if not exist "%SETUP_PATH%" (
     echo [Attenuation Auditor] No V2 installer found. Building it first...
     call build_v2.bat
     if errorlevel 1 exit /b 1
-    set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.1_x64-setup.exe"
+    set "SETUP_PATH=src-tauri\target\release\bundle\nsis\Attenuation Auditor_2.0.2_x64-setup.exe"
 )
 
 if exist "att_auditor_exceptions.json" (

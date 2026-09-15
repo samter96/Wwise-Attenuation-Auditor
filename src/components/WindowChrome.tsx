@@ -1,8 +1,9 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
+import { openUrl } from "@tauri-apps/plugin-opener";
 import { HelpCircle, Minus, RotateCcw, Square, X } from "lucide-react";
 import type { Language } from "../types";
 import { isTauri } from "../bridge";
-import { appBrand, productBrand } from "../brand";
+import { appBrand, hubLink, productBrand } from "../brand";
 
 interface Props {
   language: Language;
@@ -18,6 +19,14 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
     await appWindow[action]();
   };
 
+  const openHub = async () => {
+    if (!isTauri()) {
+      window.open(hubLink.url, "_blank", "noopener");
+      return;
+    }
+    await openUrl(hubLink.url);
+  };
+
   return (
     <>
       <header className="brand-chrome" data-tauri-drag-region onDoubleClick={() => windowAction("toggleMaximize")}>
@@ -28,10 +37,22 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
             <span>{appBrand.wordmark}</span>
           </span>
         </div>
-        <div className="window-controls">
-          <button className="window-button" aria-label="Minimize" onClick={() => windowAction("minimize")}><Minus size={14} /></button>
-          <button className="window-button" aria-label="Maximize" onClick={() => windowAction("toggleMaximize")}><Square size={11} /></button>
-          <button className="window-button close" aria-label="Close" onClick={() => windowAction("close")}><X size={14} /></button>
+        <div className="brand-chrome-right">
+          <button
+            className="hub-badge"
+            onClick={openHub}
+            onDoubleClick={(event) => event.stopPropagation()}
+            title={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
+            aria-label={language === "ko" ? "YSG Audio Tools 허브 열기" : "Open the YSG Audio Tools hub"}
+          >
+            <img src={hubLink.logoUrl} alt="" draggable={false} />
+            <span>{hubLink.label}</span>
+          </button>
+          <div className="window-controls">
+            <button className="window-button" aria-label="Minimize" onClick={() => windowAction("minimize")}><Minus size={14} /></button>
+            <button className="window-button" aria-label="Maximize" onClick={() => windowAction("toggleMaximize")}><Square size={11} /></button>
+            <button className="window-button close" aria-label="Close" onClick={() => windowAction("close")}><X size={14} /></button>
+          </div>
         </div>
       </header>
       <header className="window-chrome" data-tauri-drag-region>
@@ -40,7 +61,7 @@ export default function WindowChrome({ language, onLanguageChange, onReconnect, 
             <img src={productBrand.logoUrl} alt="" draggable={false} />
           </span>
           <span data-tauri-drag-region>{productBrand.name}</span>
-          <span className="build-tag" data-tauri-drag-region>V.2.0.1</span>
+          <span className="build-tag" data-tauri-drag-region>V.2.0.2</span>
         </div>
         <div className="chrome-actions">
           <button className="icon-text-button" onClick={onHelp}><HelpCircle size={13} />{language === "ko" ? "도움말" : "Help"}</button>

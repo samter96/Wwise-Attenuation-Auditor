@@ -1,6 +1,6 @@
 [package]
 name = "attenuation-auditor"
-version = "2.0.1"
+version = "2.0.2"
 description = "Wwise positioning and attenuation integrity auditor"
 authors = ["Attenuation Auditor"]
 edition = "2021"
@@ -17,6 +17,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 tauri = { version = "2", features = [] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 
 [profile.release]
 codegen-units = 1

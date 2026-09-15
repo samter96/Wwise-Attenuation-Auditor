@@ -1,5 +1,29 @@
 # Attenuation Auditor — DEVLOG
 
+## V.2.0.2 — 2026-09-15
+
+### Branding — 타이틀바 폰트 통일 · HUB 배지 · 앱 아이콘 교체
+
+- 최상단 브랜드 행 워드마크를 `YSG AUDIO LABS` 대문자 2색에서 `YSG Audio Labs` 혼합
+  대소문자 단일색(#edf1f8)으로 변경해 제품 행 `Attenuation Auditor` 와 동일한 인상으로 통일
+  (두 행의 typeface/size/weight 는 이전부터 Inter Variable 11px / 600 으로 동일했고,
+  체감 차이는 대문자 + `AUDIO LABS` 의 흐린 회색 처리에서 발생하던 것)
+- 창 컨트롤(— □ ×) 왼쪽에 YSG 컬러 마크 + `HUB` 텍스트 pill 배지 추가.
+  클릭 시 https://samter96.github.io/YSGAudioTools/index.html 를 기본 브라우저로 연다
+  - `tauri-plugin-opener` 도입 (Rust crate + `@tauri-apps/plugin-opener`),
+    capability 는 `https://samter96.github.io/*` 로만 허용
+  - 브라우저 프리뷰(비-Tauri)에서는 `window.open` 폴백
+  - `.brand-chrome-right` 래퍼로 배지와 window-controls 를 우측 그룹으로 묶음
+  - 배지 더블클릭이 `.brand-chrome` 의 toggleMaximize 로 버블링되지 않도록 차단
+- 실행/작업표시줄 아이콘을 V1 시절의 청록 동심원 아이콘에서 현재 제품 아이콘으로 교체
+  - 원본: `YSGAudioTools/brand/icon-attenuation-auditor-2026.png` (768px 투명 배경) → 1024px 업스케일
+  - `npx tauri icon` 으로 `src-tauri/icons/*` 전체 재생성, 릴리스 exe 임베드 아이콘으로 확인 완료
+  - PyInstaller 백엔드(`assets/icon.ico`)는 사용자에게 보이지 않는 자식 프로세스라 그대로 유지
+- 브랜드 자산 추가: `src/assets/ysg-mark-2026-color.png`, `src/brand.ts` 에 `hubLink` 분리
+- 버전 2.0.2 로 상향 (package.json / Cargo.toml / tauri.conf.json / auditor_constants.py /
+  타이틀바 배지 / install·launch·build 스크립트 / README 배지)
+- NSIS 설치본 재빌드 후 `releases/Attenuation Auditor_2.0.2_x64-setup.exe` 로 반영
+
 ## V.2.0.1 — 2026-09-15
 
 ### Branding — YSG Audio Labs 상단 브랜드 행 추가
